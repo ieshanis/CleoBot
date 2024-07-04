@@ -23,7 +23,7 @@ def estimate_damage(move_type: PkmType, pkm_type: PkmType, move_power: float, op
 
 class TypePolicy(BattlePolicy):
     """
-    Battle policy that selects actions based on a heuristic combining type effectiveness and HP.
+    Battle policy that selects actions based on a heuristic combining type effectiveness, HP, and defensive considerations.
     """
 
     def get_action(self, g: GameState) -> int:
@@ -34,12 +34,14 @@ class TypePolicy(BattlePolicy):
         my_team = g.teams[0]
         my_active = my_team.active
         my_attack_stage = my_team.stage[PkmStat.ATTACK]
+        my_defense_stage = my_team.stage[PkmStat.DEFENSE]
         my_hp = my_active.hp
 
         # get opponent team
         opp_team = g.teams[1]
         opp_active = opp_team.active
         opp_active_type = opp_active.type
+        opp_attack_stage = opp_team.stage[PkmStat.ATTACK]
         opp_defense_stage = opp_team.stage[PkmStat.DEFENSE]
         opp_hp = opp_active.hp
 
@@ -69,6 +71,11 @@ class TypePolicy(BattlePolicy):
 
             if not_fainted:
                 return int(np.argmin(match_up)) + DEFAULT_PKM_N_MOVES
+
+        # Consider using defensive moves if available
+        for i, move in enumerate(my_active.moves):
+            if move.boosts_defense():
+                return i
 
         # Otherwise, use the move with the highest damage
         return move_id
