@@ -2,25 +2,26 @@ import random
 from typing import List
 
 from vgc.behaviour import TeamBuildPolicy
-from vgc.datatypes.Objects import Pkm, PkmTemplate, PkmFullTeam, PkmRoster
+from vgc.datatypes.Objects import PkmFullTeam, PkmRoster
 from vgc.balance.meta import MetaData
-from vgc.datatypes.Constants import DEFAULT_PKM_N_MOVES
+from vgc.datatypes.Constants import DEFAULT_PKM_N_MOVES, DEFAULT_PARTY_SIZE
+from vgc.datatypes.Types import PkmType
 
-class BalancedTeamBuilder(TeamBuildPolicy):
+class CleoBuildPolicy(TeamBuildPolicy):
     """
-    Agent that builds a -- balanced team with diverse roles and types.
+    Agent that builds a balanced team with diverse roles and types.
     """
 
-    def _init_(self):
+    def __init__(self):
         self.roster = None
 
     def set_roster(self, roster: PkmRoster, ver: int = 0):
         self.roster = roster
 
     def get_action(self, meta: MetaData) -> PkmFullTeam:
-        # Ensure the roster is not empty
-        if not self.roster or len(self.roster) < 3:
-            raise ValueError("Roster must contain at least 3 Pokémon.")
+        # Ensure the roster is not empty and contains enough Pokémon
+        if not self.roster or len(self.roster) < DEFAULT_PARTY_SIZE:
+            raise ValueError("Roster must contain at least 6 Pokémon.")
 
         # Step 1: Categorize Pokémon by roles (offensive, defensive, support)
         offensive = []
@@ -36,9 +37,10 @@ class BalancedTeamBuilder(TeamBuildPolicy):
             else:
                 support.append(pt)
 
-        # Step 2: Select one Pokémon from each category to form a balanced team
+        # Step 2: Select Pokémon to form a balanced team
         team = []
 
+        # Ensure we have at least one of each type
         if offensive:
             team.append(random.choice(offensive))
         if defensive:
@@ -46,14 +48,16 @@ class BalancedTeamBuilder(TeamBuildPolicy):
         if support:
             team.append(random.choice(support))
 
-        # If the team has fewer than 3 Pokémon, randomly select additional ones to fill the team
-        while len(team) < 3:
-            team.append(random.choice(self.roster))
+        # Fill the rest of the team randomly to ensure we have 6 Pokémon
+        while len(team) < DEFAULT_PARTY_SIZE:
+            candidate = random.choice(self.roster)
+            if candidate not in team:
+                team.append(candidate)
 
-        # Step 3: Assign moves to each Pokémon
+        # Step 3: Assign moves to each Pokémon ensuring no duplication and all moves are valid
         full_team = []
         for pt in team:
-            moves = random.sample(range(len(pt.move_roster)), DEFAULT_PKM_N_MOVES)
+            moves = random.sample(pt.move_roster, min(DEFAULT_PKM_N_MOVES, len(pt.move_roster)))
             full_team.append(pt.gen_pkm(moves))
 
         return PkmFullTeam(full_team)
