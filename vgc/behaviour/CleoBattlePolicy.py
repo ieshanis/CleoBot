@@ -1,9 +1,13 @@
+#GroupWork by Eshani Sharma and Cyrus Mathew
+
 from vgc.behaviour import BattlePolicy
 from vgc.datatypes.Constants import DEFAULT_PKM_N_MOVES, DEFAULT_PARTY_SIZE, TYPE_CHART_MULTIPLIER
 from vgc.datatypes.Objects import GameState
 from vgc.datatypes.Types import PkmStat, PkmType, WeatherCondition
 import numpy as np
 from typing import List
+
+
 
 def estimate_damage(move_type: PkmType, pkm_type: PkmType, move_power: float, opp_pkm_type: PkmType,
                     attack_stage: int, defense_stage: int, weather: WeatherCondition) -> float:
